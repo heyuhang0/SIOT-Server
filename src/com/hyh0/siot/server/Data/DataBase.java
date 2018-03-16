@@ -18,7 +18,7 @@ public class DataBase<K, V> {
     }
 
     public void removeListener(Listener<K, V> l) {
-        tables.forEach((key, value) -> {value.removeListener(l);});
+        tables.forEach((key, value) -> value.removeListener(l));
     }
 
     public DataTable<K, V> getTable(K key) {

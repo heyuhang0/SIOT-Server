@@ -1,6 +1,7 @@
 package com.hyh0.siot.server;
 
 import com.hyh0.siot.server.Data.DataBase;
+import com.hyh0.siot.server.Data.DataTable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,13 +25,16 @@ class ServerThread extends Thread implements Listener<String, String> {
         logger = Logger.getLogger("com.hyh0.tcp.test");
     }
 
-    private void setCommandHandler(String table, String key, String newValue) {
-        dataBase.getTable(table).put(key, newValue);
-        out.println("OK SET " + key + " " + dataBase.getTable(table).get(key));
+    private void doSet(String tableName, String key, String newValue) {
+        DataTable<String, String> table = dataBase.getTable(tableName);
+        table.removeListener(key, this);
+        table.put(key, newValue);
+        table.addListener(key, this);
+        out.println("OK SET " + key + " " + newValue);
         logger.info(key + " is set to " + newValue);
     }
 
-    private void getCommandHandler(String table, String key) {
+    private void doGet(String table, String key) {
         String value = dataBase.getTable(table).get(key);
         out.println("GET " + key + " " + value);
         logger.info("get th value of " + key + " successfully");
@@ -42,16 +46,17 @@ class ServerThread extends Thread implements Listener<String, String> {
             out.println("HOOK " + key + " " + value);
     }
 
-    private void hookCommandHandler(String table, String key) {
+    private void doHook(String table, String key) {
         dataBase.getTable(table).addListener(key, this);
         out.println("OK HOOK " + key);
     }
 
-    private void unhookCommandHandler(String table, String key) {
+    private void doUnhook(String table, String key) {
         dataBase.getTable(table).removeListener(key, this);
+        out.println("OK UNHOOK " + key);
     }
 
-    private void wrongCommandHandler(String inStr) {
+    private void doWrongCommand(String inStr) {
         out.println("ERROR WRONG_COMMAND " + inStr);
     }
 
@@ -73,8 +78,12 @@ class ServerThread extends Thread implements Listener<String, String> {
                     out.println("OK");
                     continue;
                 }
+                if ("close".equals(inputs[0])) {
+                    out.println("OK");
+                    break;
+                }
                 if (inputs.length < 3 && !"at".equals(inputs[0])) {
-                    wrongCommandHandler(inStr);
+                    doWrongCommand(inStr);
                     continue;
                 }
                 String command = inputs[0];
@@ -83,22 +92,22 @@ class ServerThread extends Thread implements Listener<String, String> {
 
                 if (command.equals("set")) {
                     if (inputs.length < 4) {
-                        wrongCommandHandler(inStr);
+                        doWrongCommand(inStr);
                         continue;
                     }
-                    setCommandHandler(table, key, inputs[3]);
+                    doSet(table, key, inputs[3]);
 
                 } else if (command.equals("get")) {
-                    getCommandHandler(table, key);
+                    doGet(table, key);
 
                 } else if (command.equals("hook")) {
-                    hookCommandHandler(table, key);
+                    doHook(table, key);
 
                 } else if (command.equals("unhook")) {
-                    unhookCommandHandler(table, key);
+                    doUnhook(table, key);
 
                 } else {
-                    wrongCommandHandler(inStr);
+                    doWrongCommand(inStr);
                 }
             }
             out.close();
