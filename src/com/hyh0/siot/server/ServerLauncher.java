@@ -1,10 +1,11 @@
 package com.hyh0.siot.server;
 
 import com.hyh0.fstcpsocket.server.TCPServer;
-import com.hyh0.siot.server.Data.DataBase;
+
+import java.io.IOException;
 
 public class ServerLauncher {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length < 1) {
             System.out.println("Please start with a port number");
             System.out.println("like \"java -jar filename 4342\"");
@@ -12,7 +13,7 @@ public class ServerLauncher {
         int portNumber;
         try {
             portNumber = Integer.parseInt(args[0]);
-            if (portNumber >= 0 && portNumber <= 65535) {
+            if (!(portNumber >= 0 && portNumber <= 65535)) {
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
@@ -20,12 +21,12 @@ public class ServerLauncher {
             return;
         }
 
-        /*
-        TCPServer sever = new TCPServer.Builder()
-                .withHandler(new ServerThread(null, new DataBase<String, String>()))
-                .
-                */
-        Server server = new Server(portNumber);
-        server.run();
+        TCPServer server = new TCPServer.Builder()
+                .port(portNumber)
+                .withHandler(new SIOTServerCore())
+                .build();
+
+        System.out.println("Server started at port " + portNumber);
+        server.start();
     }
 }

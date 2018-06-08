@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataTable<K, V> extends HashMap<K, V>{
-    ConcurrentHashMap<K, Set<Listener<K, V>>> listenerLists = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<K, Set<Listener<K, V>>> listenerLists = new ConcurrentHashMap<>();
 
     @Override
     public V put(K key, V value) {
@@ -31,11 +31,7 @@ public class DataTable<K, V> extends HashMap<K, V>{
     }
 
     public void addListener(K key, Listener<K, V> listener) {
-        if (listenerLists.get(key) == null) {
-            Set<Listener<K, V>> set = new HashSet<>();
-            Collections.synchronizedSet(set);
-            listenerLists.put(key, set);
-        }
+        listenerLists.computeIfAbsent(key, k -> Collections.synchronizedSet(new HashSet<>()));
         listenerLists.get(key).add(listener);
     }
 
